@@ -18,7 +18,7 @@ def generate_stationary_ar_coefficients(r, random_seed=1):
     U, S, Vt = np.linalg.svd(A)
     
     # Scale singular values to be less than 1 to ensure stationarity
-    S = np.diag(np.random.uniform(0, 0.9, size=r))
+    S = np.diag(np.random.uniform(0, 0.3, size=r))
     
     # Reconstruct the matrix with scaled singular values
     A_stationary = U @ S @ Vt
@@ -30,7 +30,6 @@ def generate_multivariate_ar_process(r, n, ar_coefficients=None, noise_variance=
     # Initialize AR coefficients if not provided, ensuring stationarity
     if ar_coefficients is None:
         ar_coefficients = generate_stationary_ar_coefficients(r, random_seed)
-
     # Check if the coefficient matrix is of the right shape
     if ar_coefficients.shape != (r, r):
         raise ValueError(f"ar_coefficients should have shape ({r}, {r})")

@@ -1,7 +1,9 @@
 import numpy as np
+import pandas as pd
 from sklearn.decomposition import PCA
-
+from sklearn.preprocessing import StandardScaler
 def lag_cov_matrix(X, i):
+    X = X.copy()
     n, p = X.shape
     if i >= n:
         raise ValueError("Lag i must be smaller than the number of samples n.")
@@ -20,6 +22,7 @@ def lag_cov_matrix(X, i):
     return lag_cov
 
 def calc_M_matrix(X, start_index = 0, end_index = 1):
+    X = X.copy()
     lag_matrices = {}
     
     i = start_index
@@ -34,22 +37,9 @@ def calc_M_matrix(X, start_index = 0, end_index = 1):
     return lag_matrices
 
 def pca_eigenvalue_ratio(matrix, R=None):
-    """
-    Perform PCA on a p x p matrix, compute the eigenvalues, and find the index i+1
-    that minimizes vector_{i+1}/vector_{i}, where i is restricted to be less than R.
-    
-    Parameters:
-    matrix (np.ndarray): A p x p input matrix.
-    R (int, optional): The upper limit on the index i for calculating the eigenvalue ratio. 
-                       Defaults to p//2 if not provided, where p is the dimension of the matrix.
-    
-    Returns:
-    dict: A dictionary with two keys:
-          - 'vector': The sorted eigenvalue vector from largest to smallest.
-          - 'min_ratio_index': The index i+1 where the ratio vector_{i+1}/vector_{i} is minimized, limited to i < R.
-    """
-    
-    # Ensure the matrix is square
+    matrix = matrix.copy()
+    scaler = StandardScaler()
+    matrix = scaler.fit_transform(matrix)
     p, q = matrix.shape
     if p != q:
         raise ValueError("Input matrix must be square.")
@@ -66,16 +56,26 @@ def pca_eigenvalue_ratio(matrix, R=None):
     pca = PCA()
     pca.fit(matrix)
     eigenvalues = pca.explained_variance_
-    sorted_eigenvalues = np.sort(eigenvalues)[::-1]
-    
+    eigenvectors = pca.components_  # Get the eigenvectors
+    sorted_indices = np.argsort(eigenvalues)[::-1]
+    sorted_eigenvalues = eigenvalues[sorted_indices]
+    sorted_eigenvectors = eigenvectors[sorted_indices].T  # Sort eigenvectors accordingly
+    df_eigenvectors = pd.DataFrame(sorted_eigenvectors)
+
+    # 生成列名，如 eigenvector_1, eigenvector_2, ...
+    df_eigenvectors.columns = [f'eigenvector_{i+1}' for i in range(df_eigenvectors.shape[1])]
+
     # Limit the calculation to the first R eigenvalues
     if len(sorted_eigenvalues) < R:
         raise ValueError(f"R is larger than the number of available eigenvalues ({len(sorted_eigenvalues)}).")
+    
     ratios = sorted_eigenvalues[1:R] / sorted_eigenvalues[:R-1]
     min_ratio_index = np.argmin(ratios) + 1  # Adding 1 to get i+1
     
     result = {
-        'vector': sorted_eigenvalues,
+        'eigenvalues': sorted_eigenvalues,
+        'eigenvectors': df_eigenvectors,
         'min_ratio_index': int(min_ratio_index)
     }
+    
     return result
