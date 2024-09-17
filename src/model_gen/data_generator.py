@@ -1,4 +1,4 @@
-from model import *
+from .model import *
 import numpy as np
 
 def generate_matrix_A(s, p, r, random_seed=1):
