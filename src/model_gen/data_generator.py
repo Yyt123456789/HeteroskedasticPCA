@@ -1,4 +1,4 @@
-from model import *
+from .model import *
 import numpy as np
 
 def generate_matrix_A(s, p, r, random_seed=1):
@@ -19,25 +19,31 @@ def generate_matrix_A(s, p, r, random_seed=1):
     if s > r:
         raise ValueError("s must be no greater than r")
     
-    # Generate a p x r matrix with values uniformly distributed between -1 and 1
-    A = np.random.uniform(low=-1, high=1, size=(p, r))
-    
-    # Scale the first s columns by 1/p
-    A[:, :s] /= p
-    
-    # Scale the remaining columns by 1/sqrt(p)
-    A[:, s:] /= np.sqrt(p)
-    
-    return A
 
-def apply_matrix_to_ar_process(A, symmetric_matrix=None, ar_process=None, random_seed=1):
+    random_matrix = np.random.randn(p, r)
+    Q, _ = np.linalg.qr(random_matrix)
+    A_orthogonal = Q[:, :r]
+    
+    A = A_orthogonal.copy()
+    # Scale the first s columns by p
+    A[:, :s] *= p
+    
+    # Scale the remaining columns by sqrt(p)
+    A[:, s:] *= np.sqrt(p)
+    
+    result = {}
+    result['A_orthogonal'] = A_orthogonal
+    result['A'] = A
+    return result
+
+def apply_matrix_to_ar_process(A, model_variance=None, ar_process=None, random_seed=1):
     """
     Apply matrix A to the AR process and add noise based on a symmetric matrix (covariance).
     
     Parameters:
     A (np.ndarray): A p x r matrix.
-    symmetric_matrix (np.ndarray, optional): A p x p symmetric matrix representing the covariance of the noise.
-                                             If None, it defaults to the identity matrix (I).
+    model_variance (np.ndarray, optional): A p x p symmetric matrix representing the covariance of the noise.
+                                             If None, it defaults to the setting matrix.
     ar_process (np.ndarray): The AR process of shape (n, r), where n is the number of samples.
     
     Returns:
@@ -52,27 +58,31 @@ def apply_matrix_to_ar_process(A, symmetric_matrix=None, ar_process=None, random
     if ar_r != r:
         raise ValueError(f"Matrix A's columns {r} must match AR process dimension {ar_r}")
     
-    # If symmetric_matrix is None, use the identity matrix of size p x p
-    if symmetric_matrix is None:
-        symmetric_matrix = np.eye(p)
+    # If model_variance is None, use the identity matrix of size p x p
+    if model_variance is None:
+        diag = np.random.uniform(0, 1, size=p)
+        model_variance = np.diag(diag)
+
     
     # Compute A * ar_process
     result = A @ ar_process.T  # This will be a p x n matrix
     
-    # Generate white noise with the given covariance matrix (symmetric_matrix)
-    noise = np.random.multivariate_normal(mean=np.zeros(p), cov=symmetric_matrix, size=n).T
+    # Generate white noise with the given covariance matrix (model_variance)
+    noise = np.random.multivariate_normal(mean=np.zeros(p), cov=model_variance, size=n).T
     
     # Add noise to the result (transpose to ensure dimensions match n x p)
     final_result = result.T + noise.T  # Result is now n x p
     
     return final_result
 
-def gen_experiment_data( sample_size, strong_f_num, p_dim, total_f_num, random_seed=1):
-    A = generate_matrix_A(strong_f_num, p_dim, total_f_num, random_seed= random_seed)
+def gen_experiment_data( sample_size, strong_f_num, p_dim, total_f_num, model_variance=None, random_seed=1):    
+    matrix_A = generate_matrix_A(strong_f_num, p_dim, total_f_num, random_seed= random_seed)
+    A = matrix_A['A']
     ar_process = generate_multivariate_ar_process(total_f_num, sample_size, random_seed= random_seed)
-    y_process = apply_matrix_to_ar_process(A, ar_process=ar_process, random_seed= random_seed)
+    y_process = apply_matrix_to_ar_process(A,model_variance=model_variance, ar_process=ar_process, random_seed= random_seed)
     result = {}
     result['A'] = A
+    result['A_orthogonal'] = matrix_A['A_orthogonal']
     result['ar_process'] = ar_process
     result['y_process'] = y_process
     return result
