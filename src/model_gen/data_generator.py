@@ -60,7 +60,7 @@ def apply_matrix_to_ar_process(A, model_variance=None, ar_process=None, random_s
     
     # If model_variance is None, use the identity matrix of size p x p
     if model_variance is None:
-        diag = np.random.uniform(0, 1, size=p)
+        diag = np.random.uniform(2, 5, size=p)
         model_variance = np.diag(diag)
 
     

@@ -49,11 +49,6 @@ def pca_eigenvalue_ratio(matrix, R=None):
     if R >= p or R <= 1:
         raise ValueError(f"R must be between 1 and {p-1}.")
     
-    # Perform PCA (eigen decomposition)
-    # pca = PCA()
-    # pca.fit(matrix)
-    # eigenvalues = pca.explained_variance_
-    # eigenvectors = pca.components_  # Get the eigenvectors
     eigenvalues, eigenvectors = np.linalg.eigh((matrix+matrix.T)/2)
     
     sorted_indices = np.argsort(eigenvalues)[::-1]  # [::-1] 
