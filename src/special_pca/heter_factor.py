@@ -62,7 +62,6 @@ def pca_eigenvalue_ratio(matrix, R=None):
     sorted_eigenvectors = eigenvectors[sorted_indices].T  # Sort eigenvectors accordingly
     df_eigenvectors = pd.DataFrame(sorted_eigenvectors)
 
-    # 生成列名，如 eigenvector_1, eigenvector_2, ...
     df_eigenvectors.columns = [f'eigenvector_{i+1}' for i in range(df_eigenvectors.shape[1])]
 
     # Limit the calculation to the first R eigenvalues
