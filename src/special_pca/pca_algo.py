@@ -1,5 +1,4 @@
 import numpy as np
-from sklearn.decomposition import PCA
 
 def special_pca(Sigma_hat, r, max_iter=100, tol=1e-5):
     """

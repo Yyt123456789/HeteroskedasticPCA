@@ -1,7 +1,5 @@
 import numpy as np
 import pandas as pd
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
 def lag_cov_matrix(X, i):
     X = X.copy()
     n, p = X.shape
@@ -38,8 +36,7 @@ def calc_M_matrix(X, start_index = 0, end_index = 1):
 
 def pca_eigenvalue_ratio(matrix, R=None):
     matrix = matrix.copy()
-    scaler = StandardScaler()
-    matrix = scaler.fit_transform(matrix)
+    matrix = (matrix + matrix.T)/2
     p, q = matrix.shape
     if p != q:
         raise ValueError("Input matrix must be square.")
@@ -53,13 +50,15 @@ def pca_eigenvalue_ratio(matrix, R=None):
         raise ValueError(f"R must be between 1 and {p-1}.")
     
     # Perform PCA (eigen decomposition)
-    pca = PCA()
-    pca.fit(matrix)
-    eigenvalues = pca.explained_variance_
-    eigenvectors = pca.components_  # Get the eigenvectors
-    sorted_indices = np.argsort(eigenvalues)[::-1]
+    # pca = PCA()
+    # pca.fit(matrix)
+    # eigenvalues = pca.explained_variance_
+    # eigenvectors = pca.components_  # Get the eigenvectors
+    eigenvalues, eigenvectors = np.linalg.eigh((matrix+matrix.T)/2)
+    
+    sorted_indices = np.argsort(eigenvalues)[::-1]  # [::-1] 
     sorted_eigenvalues = eigenvalues[sorted_indices]
-    sorted_eigenvectors = eigenvectors[sorted_indices].T  # Sort eigenvectors accordingly
+    sorted_eigenvectors = eigenvectors[:, sorted_indices]
     df_eigenvectors = pd.DataFrame(sorted_eigenvectors)
 
     df_eigenvectors.columns = [f'eigenvector_{i+1}' for i in range(df_eigenvectors.shape[1])]
