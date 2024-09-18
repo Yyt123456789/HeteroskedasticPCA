@@ -9,7 +9,7 @@ setup(
         # 列出项目的依赖库
         'numpy',
         'pandas',
-        'scikit-learn',
+        'matplotlib'
         # ...
     ],
 )
